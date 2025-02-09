@@ -1,0 +1,6 @@
+{
+    "Proto":     "tcp",
+	"Host":      "localhost",
+	"Port":      5001,
+	"ConnCount": 10
+}
