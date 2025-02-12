@@ -73,8 +73,15 @@ func (s *Server) connMsgs() {
 				slog.Error("command process error", "err", err)
 			}
 		case connection := <-s.addConnChan:
-			s.connections[connection] = struct{}{}
-			slog.Info("new connection added", "remoteAddr", connection.conn.RemoteAddr())
+			if len(s.connections) > s.Count {
+				msg := fmt.Sprintf("Maximum connections %d reached. Cannot accept new connections...", s.Count)
+				slog.Info("Maximum connections reached. Cannot accept new connections.", "Max Connections", s.Count)
+				connection.Send([]byte(msg))
+				connection.Close()
+			} else {
+				s.connections[connection] = struct{}{}
+				slog.Info("new connection added", "remoteAddr", connection.conn.RemoteAddr())
+			}
 		case connection := <-s.delConnChan:
 			connection.Close()
 			delete(s.connections, connection)

@@ -7,10 +7,10 @@ import (
 )
 
 type RedisConfig struct {
-	Protocol    string `mapstructure:"protocol"`
-	Host        string `mapstructure:"host"`
-	Port        int    `mapstructure:"port"`
-	Connections int    `mapstructure:"connections"`
+	Protocol string `mapstructure:"protocol"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Count    int    `mapstructure:"connections"`
 }
 
 func initConfig() *RedisConfig {
