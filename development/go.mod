@@ -1,4 +1,4 @@
-module goredis
+module mockredis
 
 go 1.23.5
 

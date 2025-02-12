@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tidwall/resp"
@@ -83,10 +84,18 @@ func parseVal(val resp.Value) (Command, error) {
 
 	var cmd Command
 	var err error
+	var cmd1Str, cmd2Str, dualStr string
 
-	cmdStr := val.Array()[0].String()
+	if len(val.Array()) >= 1 {
+		cmd1Str = val.Array()[0].String()
+	}
+	if len(val.Array()) >= 2 {
+		cmd2Str = val.Array()[1].String()
+	}
 
-	switch cmdStr {
+	dualStr = strings.TrimSpace(strings.Join([]string{cmd1Str, cmd2Str}, " "))
+
+	switch cmd1Str {
 	case GET:
 		arg1 := val.Array()[1].String()
 		cmd = GETCommand{
@@ -94,7 +103,7 @@ func parseVal(val resp.Value) (Command, error) {
 		}
 	case SET:
 		arg1 := val.Array()[1].String()
-		arg2 := val.Array()[1].Bytes()
+		arg2 := val.Array()[2].Bytes()
 		cmd = SETCommand{
 			key: arg1,
 			val: arg2,
@@ -102,16 +111,11 @@ func parseVal(val resp.Value) (Command, error) {
 	case DEL:
 		keys := val.Array()[1:]
 		val := make([]string, 0, len(keys))
-		for i, v := range keys {
-			val[i] = v.String()
+		for _, v := range keys {
+			val = append(val, v.String())
 		}
 		cmd = DELCommand{
 			val: val,
-		}
-	case CLIENTSETNAME:
-		arg1 := val.Array()[1].Bytes()
-		cmd = CLIENTSETNAMECommand{
-			val: arg1,
 		}
 	case KEYS:
 		cmd = KEYSCommand{}
@@ -119,13 +123,21 @@ func parseVal(val resp.Value) (Command, error) {
 		cmd = QUITCommand{}
 	case HELLO:
 		cmd = HELLOCommand{}
-	case CLIENTLIST:
-		cmd = CLIENTLISTCommand{}
-	case CLIENTGETNAME:
-		cmd = CLIENTGETNAMECommand{}
 	default:
-		errMsg := fmt.Sprintf("Unsupported command %v received.", cmdStr, resp.Array)
-		err = errors.New(errMsg)
+		switch dualStr {
+		case CLIENTSETNAME:
+			arg1 := val.Array()[2].Bytes()
+			cmd = CLIENTSETNAMECommand{
+				val: arg1,
+			}
+		case CLIENTGETNAME:
+			cmd = CLIENTGETNAMECommand{}
+		case CLIENTLIST:
+			cmd = CLIENTLISTCommand{}
+		default:
+			errMsg := fmt.Sprintf("Unsupported command %v or %v received.", cmd1Str, dualStr)
+			err = errors.New(errMsg)
+		}
 	}
 	return cmd, err
 }
